@@ -1,0 +1,61 @@
+name: Delta scan
+
+on:
+  schedule:
+    # Every 10 minutes (UTC). GitHub may delay scheduled runs by a few minutes at busy times.
+    # A full scan is ~600 SEC requests paced under the 10 req/s fair-access limit.
+    - cron: '*/10 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write   # commit the small history file
+  pages: write      # publish the website
+  id-token: write   # required by the Pages deploy action
+
+concurrency:
+  group: delta-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Engine self-test (offline)
+        run: node test/engine.test.js && node test/filings.test.js
+
+      - name: Scan SEC EDGAR
+        run: node scan.js
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+
+      - name: Build website
+        run: node build-pages.js
+
+      - name: Publish website
+        uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+      # Only the small first-seen history is committed, so the repo doesn't grow with every scan.
+      # The commit also counts as activity, which stops GitHub pausing the schedule.
+      - name: Save history
+        run: |
+          git config user.name "delta-scanner-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          node -e "const m=require('./docs/data/flags.json').meta;require('fs').writeFileSync('docs/data/last-run.json',JSON.stringify({generatedAt:m.generatedAt,companiesScanned:m.companiesScanned,companiesFlagged:m.companiesFlagged}))"
+          git add docs/data/history.json docs/data/last-run.json docs/data/quote-cache.json
+          git commit -m "Scan $(date -u +%Y-%m-%dT%H:%MZ)" || echo "No changes to commit"
+          git push

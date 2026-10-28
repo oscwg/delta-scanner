@@ -1,0 +1,14 @@
+{
+  "name": "delta-scanner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Free scanner for sudden shifts in US-listed companies' SEC XBRL financials",
+  "license": "MIT",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "test": "node test/engine.test.js && node test/filings.test.js",
+    "demo": "node test/make-demo.js && node build-pages.js",
+    "scan": "node scan.js && node build-pages.js",
+    "serve": "python3 -m http.server 8000 --directory docs"
+  }
+}

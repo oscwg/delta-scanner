@@ -1,0 +1,11 @@
+{
+  "quarters": 12,
+  "minAssets": 1000000000,
+  "minRevenueTTM": 500000000,
+  "exchanges": ["NYSE", "Nasdaq", "CBOE"],
+  "minAbsDelta": 25000000,
+  "eventLookbackDays": 150,
+  "maxFlags": 250,
+  "watchlist": [],
+  "foreignWatchlist": ["SKHY", "TSM", "ASML", "ARM", "SAP", "NVO", "TM", "SONY", "BABA", "SHEL", "AZN", "HSBC", "UL", "BHP", "RIO", "INFY"]
+}

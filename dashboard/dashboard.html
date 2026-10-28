@@ -1,0 +1,710 @@
+<title>Delta Scanner</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: triage console — ranked flag list on the left, evidence (chart + reasons + filings) on the right; stacks on phones. */
+:root {
+  --bg: #eef1f6;          /* cool filing-paper grey, blue-biased */
+  --surface: #ffffff;
+  --surface-2: #f6f8fb;
+  --ink: #0d1626;         /* navy-black */
+  --muted: #566176;
+  --faint: #8a94a6;
+  --line: #dbe0e8;
+  --accent: #2147b5;      /* EDGAR navy-blue */
+  --accent-soft: #d7e0f7;
+  --bar: #c4ccd9;
+  --grid: #e6e9ef;
+  --hover: #e8edf6;
+  --critical: #d03b3b; --serious: #ec835a; --warning: #fab219; --good: #0ca30c;
+  --good-text: #006300; --bad-text: #b02a2a;
+  --banner: #fff4d6; --banner-ink: #5c4300;
+  --f-display: "Archivo", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Public Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0b111c; --surface: #121a29; --surface-2: #0f1623; --ink: #e7ebf3; --muted: #9aa4b8; --faint: #6f7a90;
+  --line: #233049; --accent: #7896f7; --accent-soft: #24345f; --bar: #36425b; --grid: #1b2537; --hover: #1a2436;
+  --good-text: #3ec43e; --bad-text: #ff7a7a; --banner: #3a2f10; --banner-ink: #f5dc93; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0b111c; --surface: #121a29; --surface-2: #0f1623; --ink: #e7ebf3; --muted: #9aa4b8; --faint: #6f7a90;
+  --line: #233049; --accent: #7896f7; --accent-soft: #24345f; --bar: #36425b; --grid: #1b2537; --hover: #1a2436;
+  --good-text: #3ec43e; --bad-text: #ff7a7a; --banner: #3a2f10; --banner-ink: #f5dc93; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f-body); margin: 0; }
+.wrap { max-width: 1440px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, .item:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.label { font: 600 11px/1.2 var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+/* masthead */
+.mast { padding-block: 22px 14px; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; border-bottom: 1px solid var(--line); }
+.brand h1 { font: 800 34px/1 var(--f-display); font-stretch: 78%; letter-spacing: -.01em; margin: 0; text-wrap: balance; }
+.brand h1 span { color: var(--accent); }
+.brand p { margin: 6px 0 0; color: var(--muted); max-width: 62ch; }
+.runline { font: 500 12.5px/1.5 var(--f-mono); color: var(--muted); text-align: right; }
+.runline b { color: var(--ink); font-weight: 600; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--good); margin-right: 6px; vertical-align: 1px; }
+.dot.stale { background: var(--warning); }
+
+.banner { margin-top: 14px; background: var(--banner); color: var(--banner-ink); border-radius: 8px; padding: 10px 14px; font-size: 14px; }
+.banner b { font-weight: 700; }
+
+/* summary strip */
+.strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-top: 16px; }
+.strip > div { background: var(--surface); padding: 12px 16px; min-width: 0; }
+.strip .v { font: 700 26px/1.1 var(--f-display); font-stretch: 85%; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.strip .s { color: var(--muted); font-size: 12.5px; }
+.meter { height: 6px; background: var(--grid); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+
+/* controls */
+.controls { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; padding-block: 14px; }
+.search { flex: 1 1 220px; min-width: 0; max-width: 340px; position: relative; }
+.search input { width: 100%; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 6px 11px; border-radius: 999px; font: 500 13px/1 var(--f-body); cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.chip .c { font-family: var(--f-mono); font-size: 11.5px; opacity: .7; margin-left: 4px; }
+select, .toggle { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 7px 10px; font: 500 13px var(--f-body); cursor: pointer; }
+.toggle[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+/* main layout */
+.layout { display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); gap: 16px; align-items: start; padding-bottom: 24px; }
+.list { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; position: sticky; top: env(safe-area-inset-top, 0px); max-height: calc(100vh - 24px); display: flex; flex-direction: column; }
+.list-head { display: flex; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.items { overflow-y: auto; }
+.item { display: grid; grid-template-columns: 4px 44px minmax(0, 1fr) 84px; gap: 0 10px; align-items: center; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--grid); cursor: pointer; }
+.item:hover { background: var(--hover); }
+.item[aria-current="true"] { background: var(--accent-soft); }
+.item .stripe { align-self: stretch; border-radius: 0 3px 3px 0; }
+.item .sc { font: 700 20px/1 var(--f-display); font-stretch: 80%; text-align: center; font-variant-numeric: tabular-nums; }
+.item .who { min-width: 0; }
+.item .tk { font: 600 14px/1.25 var(--f-mono); }
+.item .nm { color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item .why { font-size: 12.5px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item .spark { width: 84px; height: 30px; display: block; }
+.new { display: inline-block; font: 700 9.5px/1 var(--f-body); letter-spacing: .08em; color: var(--accent); border: 1px solid var(--accent); border-radius: 3px; padding: 2px 4px; margin-left: 6px; vertical-align: 2px; }
+.empty { padding: 28px 16px; color: var(--muted); text-align: center; }
+
+/* detail */
+.detail { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
+.dhead { padding: 18px 22px 14px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 12px 20px; justify-content: space-between; align-items: flex-start; }
+.dhead h2 { margin: 0; font: 800 28px/1.05 var(--f-display); font-stretch: 80%; text-wrap: balance; }
+.dhead h2 .tkr { font-family: var(--f-mono); font-weight: 600; font-size: 20px; color: var(--accent); margin-right: 10px; font-stretch: 100%; }
+.meta { color: var(--muted); font-size: 13px; margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.scorebox { display: flex; gap: 14px; align-items: center; }
+.bigscore { text-align: right; }
+.bigscore .n { font: 800 44px/0.9 var(--f-display); font-stretch: 75%; font-variant-numeric: tabular-nums; }
+.status { display: inline-flex; align-items: center; gap: 6px; font: 600 12.5px var(--f-body); padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); }
+.status svg { width: 11px; height: 11px; }
+.conf { font-size: 12.5px; color: var(--muted); max-width: 30ch; }
+.conf b { color: var(--ink); }
+
+.section { padding: 16px 22px; border-bottom: 1px solid var(--line); }
+.section:last-child { border-bottom: 0; }
+.section h3 { margin: 0 0 10px; font: 700 15px/1.2 var(--f-body); }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.tab { border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); border-radius: 6px; padding: 5px 10px; font: 500 12.5px var(--f-body); cursor: pointer; }
+.tab[aria-selected="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); font-weight: 600; }
+.charthead { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; align-items: baseline; }
+.charthead .delta { font: 700 22px/1 var(--f-display); font-stretch: 85%; font-variant-numeric: tabular-nums; }
+.chartbox { position: relative; margin-top: 6px; }
+.chartbox svg { width: 100%; height: auto; display: block; overflow: visible; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--surface); padding: 6px 9px; border-radius: 6px; font: 500 12px/1.35 var(--f-mono); white-space: nowrap; transform: translate(-50%, -100%); margin-top: -8px; z-index: 3; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; color: var(--muted); margin-top: 6px; }
+.legend i { display: inline-block; width: 12px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+
+.reasons { display: grid; gap: 10px; }
+.reason { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 4px 16px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); cursor: pointer; text-align: left; color: inherit; font: inherit; width: 100%; }
+.reason:hover { border-color: var(--accent); }
+.reason[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.reason .rl { font: 700 13.5px/1.25 var(--f-body); }
+.reason .rg { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+.sev { margin-top: 8px; }
+.sev .bar { height: 5px; background: var(--grid); border-radius: 3px; overflow: hidden; }
+.sev .bar i { display: block; height: 100%; }
+.sev .t { font: 500 11px var(--f-mono); color: var(--muted); margin-top: 3px; }
+.reason p { margin: 0; font-size: 14px; max-width: 75ch; }
+.reason .foot { font-size: 12px; color: var(--muted); margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.pill { font: 600 10.5px/1 var(--f-mono); padding: 3px 5px; border-radius: 4px; background: var(--accent-soft); color: var(--ink); }
+.warn { color: var(--bad-text); }
+
+.multiples { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.mini { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-width: 0; }
+.mini .h { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.mini .h b { font: 600 12.5px var(--f-body); }
+.mini .h span { font: 600 13px var(--f-mono); }
+.mini svg { width: 100%; height: 54px; display: block; margin-top: 6px; }
+.mini .d { font: 500 11.5px var(--f-mono); color: var(--muted); }
+
+.events { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.events li { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 12px; font-size: 14px; }
+.events .date { font: 500 12.5px/1.6 var(--f-mono); color: var(--muted); }
+.code { font: 600 12px var(--f-mono); }
+
+.prov { font-size: 12.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 18px; }
+.prov span { min-width: 0; overflow-wrap: anywhere; }
+.prov code { font: 500 11.5px var(--f-mono); color: var(--ink); overflow-wrap: anywhere; }
+.tablewrap { overflow-x: auto; margin-top: 8px; }
+table { border-collapse: collapse; font-size: 12.5px; min-width: 100%; }
+th, td { padding: 5px 10px; border-bottom: 1px solid var(--grid); text-align: right; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font: 600 11px var(--f-body); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+details > summary { cursor: pointer; font: 600 13px var(--f-body); color: var(--accent); }
+
+.method { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; margin-bottom: 18px; }
+.method h3 { font: 700 15px var(--f-body); margin: 16px 0 6px; }
+.method p, .method li { max-width: 80ch; color: var(--ink); font-size: 14px; }
+.method ul { padding-left: 18px; margin: 6px 0; }
+#toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--surface); padding: 10px 16px; border-radius: 8px; font: 600 13.5px var(--f-body); z-index: 20; max-width: calc(100% - 32px); }
+.fresh { display: inline-block; font: 700 9.5px/1 var(--f-body); letter-spacing: .06em; color: var(--surface); background: var(--accent); border-radius: 3px; padding: 3px 5px; margin-left: 6px; vertical-align: 2px; white-space: nowrap; }
+.qv { display: inline-block; font: 600 10px/1 var(--f-body); color: var(--good-text); border: 1px solid currentColor; border-radius: 3px; padding: 2px 4px; margin-left: 6px; vertical-align: 2px; white-space: nowrap; }
+.unit { font: 500 13px var(--f-body); color: var(--muted); }
+.just { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }
+.just-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.just h2 { margin: 0; font: 800 20px/1.1 var(--f-display); font-stretch: 85%; }
+.just p { margin: 4px 0 10px; color: var(--muted); font-size: 13px; max-width: 80ch; }
+.just-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(260px, 300px); gap: 12px; overflow-x: auto; padding-bottom: 6px; }
+.figwrap { overflow-x: auto; margin: 4px 0 8px; }
+table.fig { border-collapse: collapse; font: 500 11px/1.35 var(--f-mono, monospace); font-variant-numeric: tabular-nums; width: 100%; }
+table.fig th, table.fig td { padding: 3px 4px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line, rgba(127,127,127,.2)); }
+table.fig th:first-child { text-align: left; font-weight: 600; }
+table.fig thead th { color: var(--muted); font-weight: 600; }
+table.fig td.neg { color: var(--bad-text); }
+.jsrc { font: 600 11px/1.3 var(--f-mono, monospace); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin: 2px 0 4px; }
+.jcard.wide { grid-column: span 3; }
+@media (max-width: 1100px) { .jcard.wide { grid-column: span 2; } }
+@media (max-width: 720px) { .jcard.wide { grid-column: auto; } }
+.jcard { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: var(--surface-2); min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.jtop { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.jtop .tk { font: 600 14px var(--f-mono); }
+.jcard .nm { color: var(--muted); font-size: 12.5px; }
+.jcard blockquote, .quote blockquote { margin: 0; font-size: 13px; line-height: 1.45; border-left: 3px solid var(--line); padding-left: 9px; }
+.jcard blockquote.mg { border-left-color: var(--accent); }
+.jlinks { font-size: 12px; margin-top: auto; }
+.quotes { display: grid; gap: 10px; }
+.quote { margin: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
+.quote.ok blockquote { border-left-color: var(--good); }
+.quote blockquote { font-size: 14px; max-width: 80ch; }
+.quote figcaption { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; font-size: 12px; color: var(--muted); margin-top: 8px; }
+.vchip { font: 600 11px var(--f-body); padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.vchip.ok { color: var(--good-text); border-color: var(--good-text); }
+.muted { color: var(--muted); font-size: 13.5px; margin: 0; max-width: 80ch; }
+.muted.small { font-size: 12px; margin-top: 8px; }
+footer { color: var(--muted); font-size: 12.5px; padding-block: 0 28px; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .list { position: static; max-height: 46vh; }
+  .strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .runline { text-align: left; }
+}
+@media (max-width: 560px) {
+  .reason { grid-template-columns: minmax(0, 1fr); }
+  .multiples { grid-template-columns: minmax(0, 1fr); }
+  .dhead, .section { padding-left: 14px; padding-right: 14px; }
+  .brand h1 { font-size: 28px; }
+  .events li { grid-template-columns: minmax(0, 1fr); gap: 0; }
+}
+@media (prefers-reduced-motion: no-preference) { .item, .reason, .tab, .chip { transition: background-color .12s, border-color .12s; } }
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div class="brand">
+      <h1>Delta <span>Scanner</span></h1>
+      <p>Sudden shifts in the financial statements of US-listed companies, caught from SEC XBRL filings and ranked by how far they break from each company's own history.</p>
+    </div>
+    <div class="runline" id="runline">Loading scan…</div>
+  </header>
+  <div class="banner" id="banner" hidden></div>
+
+  <section class="strip" id="strip" aria-label="Scan summary"></section>
+
+  <div class="controls" role="toolbar" aria-label="Filters">
+    <div class="search"><input id="q" type="search" placeholder="Search ticker or company" aria-label="Search ticker or company"></div>
+    <div class="chips" id="groups"></div>
+    <select id="tier" aria-label="Company size">
+      <option value="">All sizes</option><option>Mega</option><option>Large</option><option>Mid</option><option>Small</option>
+    </select>
+    <select id="minscore" aria-label="Minimum score">
+      <option value="0">Any score</option><option value="60">Score 60+</option><option value="80">Score 80+</option>
+    </select>
+    <button class="toggle" id="freshonly" aria-pressed="false" type="button">Filed in last 48h</button>
+    <button class="toggle" id="newonly" aria-pressed="false" type="button">New in last 7 days</button>
+    <select id="sort" aria-label="Sort">
+      <option value="score">Sort: score</option><option value="filed">Sort: latest filing</option><option value="new">Sort: first flagged</option><option value="ticker">Sort: ticker</option>
+    </select>
+  </div>
+
+  <section class="just" id="just" hidden aria-label="Earnings released in the last 48 hours">
+    <div class="just-head"><div><h2>Just reported</h2><p>Earnings releases filed with the SEC in the last 48 hours. Their XBRL numbers arrive with the 10-Q, so they are not scored yet; the lines below are quoted verbatim from each release (or from the call transcript, where the company filed one).</p></div><button class="toggle" id="justmore" type="button" hidden>Show all</button></div>
+    <div class="just-row" id="justrow"></div>
+  </section>
+
+  <main class="layout">
+    <aside class="list" aria-label="Flagged companies">
+      <div class="list-head"><span class="label">Flagged</span><span class="label num" id="count"></span></div>
+      <div class="items" id="items" role="listbox" aria-label="Flagged companies"></div>
+    </aside>
+    <article class="detail" id="detail" aria-live="polite"></article>
+  </main>
+
+  <details class="method">
+    <summary>How flags are chosen, and what this data cannot tell you</summary>
+    <h3>Pipeline</h3>
+    <p>Each run pulls ten balance-sheet and P&amp;L line items for every SEC filer from the EDGAR XBRL frames API, twelve calendar quarters deep, then keeps NYSE/Nasdaq/Cboe-listed companies with at least $1bn of assets or $500m of trailing revenue. Every company is compared with itself: the latest quarter against the same quarter a year earlier (YoY) and the quarter before (QoQ). Fiscal Q4, which companies report only inside the annual 10-K, is derived as the annual figure minus the first nine months.</p>
+    <h3>Rules</h3>
+    <div class="tablewrap"><table id="rulesTable"><thead><tr><th>Flag</th><th>Fires when</th></tr></thead><tbody></tbody></table></div>
+    <h3>Scoring</h3>
+    <p>Each rule scores 0–100 from three parts: size of the % move, materiality (the dollar move as a share of total assets or quarterly revenue) and a robust z-score against the company's own last eight YoY changes. The company score takes the strongest signal in full and adds a damped share of each corroborating one; recent 8-K filings for restatement, bankruptcy, delisting notices, auditor changes, impairments or restructuring raise it further. Confidence is High for directly reported quarterly values, Medium when a fiscal Q4 had to be derived or the company has too little history, and Low when the source looks wrong.</p>
+    <h3>Data gaps</h3>
+    <ul>
+      <li><b>Timing.</b> Structured XBRL arrives with the 10-Q/10-K, typically 1–5 weeks after the earnings press release, so the scanner sees results after the market does.</li>
+      <li><b>Coverage.</b> Foreign filers using 20-F/40-F and IFRS tags are largely absent. Banks and insurers often use different revenue tags, so their P&amp;L rules fire less reliably.</li>
+      <li><b>Cash flow.</b> Operating cash flow is reported year-to-date in 10-Qs and is not in the quarterly frames, so earnings-quality checks use receivables and inventory instead.</li>
+      <li><b>Mechanical moves.</b> Acquisitions, spin-offs, stock splits and reclassifications create real-looking deltas. The balance-sheet transformation flag and 8-K Item 2.01 help spot them.</li>
+      <li><b>Freshness.</b> Each run reads EDGAR's live latest-filings feed (updated within minutes) for 10-Qs, 10-Ks and 8-Ks from the last 48 hours. XBRL figures appear in the data within minutes of a 10-Q being accepted; earnings releases (8-K Item 2.02) carry no XBRL, so they are listed under Just reported until the 10-Q arrives.</li>
+      <li><b>Statements.</b> Quotes come only from SEC filings: the 10-Q/10-K behind the numbers, the same quarter's earnings release, and any call transcript or prepared remarks the company filed as an exhibit. Third-party transcript sites are not used because they cannot be checked against an official record. A quote is shown only if it is on the flag's topic; it is marked verified only if its figure matches the flagged value.</li>
+      <li><b>Base effects.</b> A big YoY swing that only reflects a one-off in the year-ago quarter is screened out, so a recovery from last year's impairment does not show up as a new shift.</li>
+      <li><b>Filer errors.</b> XBRL tagging mistakes happen; moves of roughly 1000× are down-weighted and labelled as possible scaling errors.</li>
+      <li><b>No prices.</b> Market cap and share-price reaction are not included, to keep the pipeline free of unofficial data sources.</li>
+    </ul>
+  </details>
+  <footer id="foot">Source: SEC EDGAR XBRL frames API and Submissions API (data.sec.gov). Public domain US government data. Not investment advice.</footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  let DATA = null, FLAGS = [], view = [], current = null, metricSel = null;
+  const state = { q: '', group: 'All', tier: '', min: 0, newOnly: false, freshOnly: false, sort: 'score' };
+  try { const s = JSON.parse(localStorage.getItem('delta-scanner-filters') || 'null'); if (s) Object.assign(state, s, { q: '' }); } catch (e) {}
+  const save = () => { try { localStorage.setItem('delta-scanner-filters', JSON.stringify(state)); } catch (e) {} };
+
+  // ---------- formatting
+  function money(v, short) {
+    if (v == null || !isFinite(v)) return 'n/a';
+    const a = Math.abs(v), s = v < 0 ? '−' : '';
+    if (a >= 1e9) return `${s}$${(a / 1e9).toFixed(short ? (a >= 1e10 ? 0 : 1) : (a >= 1e10 ? 1 : 2))}bn`;
+    if (a >= 1e6) return `${s}$${(a / 1e6).toFixed(0)}m`;
+    if (a === 0) return '$0';
+    return `${s}$${(a / 1e3).toFixed(0)}k`;
+  }
+  function pct(p) {
+    if (p == null || !isFinite(p)) return 'n/a';
+    const a = Math.abs(p * 100);
+    return `${p > 0 ? '+' : p < 0 ? '−' : ''}${a >= 1000 ? Math.round(a).toLocaleString('en-GB') : a.toFixed(a < 10 ? 1 : 0)}%`;
+  }
+  const fmtDate = (iso) => { const d = new Date(iso); return isNaN(d) ? iso : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); };
+  const daysAgo = (iso) => (Date.now() - new Date(iso + (iso.length === 10 ? 'T00:00:00Z' : ''))) / 864e5;
+  const level = (s) => (s >= 80 ? { k: 'critical', t: 'Critical' } : s >= 60 ? { k: 'serious', t: 'High' } : { k: 'warning', t: 'Watch' });
+  const shape = (k) => k === 'critical' ? '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 0.5 11.5 6 6 11.5 0.5 6Z" fill="var(--critical)"/></svg>'
+    : k === 'serious' ? '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1 11.5 11H0.5Z" fill="var(--serious)"/></svg>'
+    : '<svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="var(--warning)"/></svg>';
+  const slug = (t) => 't-' + String(t || '').replace(/[^A-Za-z0-9]+/g, '-');
+  const isNew = (f) => f.firstSeen && daysAgo(f.firstSeen) <= 7;
+  const acceptedOf = (f) => (f.fresh && f.fresh.accepted) || f.acceptedAt || (f.filed ? f.filed + 'T00:00:00Z' : null);
+  const isFresh = (f) => { const a = acceptedOf(f); return !!a && (Date.now() - Date.parse(a)) / 36e5 <= 48; };
+  function ago(iso) {
+    const h = (Date.now() - Date.parse(iso)) / 36e5; if (!isFinite(h)) return '';
+    if (h < 1) return Math.max(1, Math.round(h * 60)) + 'm ago'; if (h < 36) return Math.round(h) + 'h ago'; return Math.round(h / 24) + 'd ago';
+  }
+  const metricLabel = (ck) => (DATA.meta.concepts[ck] || { label: ck }).label;
+
+  // ---------- load
+  async function load() {
+    try {
+      const r = await fetch('data/flags.json', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      DATA = await r.json();
+    } catch (e) {
+      $('runline').textContent = 'No scan data yet';
+      $('detail').innerHTML = `<div class="empty">Could not load <code>data/flags.json</code> (${esc(e.message)}). Run the scanner once, or check the GitHub Actions log for the last run.</div>`;
+      return;
+    }
+    FLAGS = DATA.flags || [];
+    const want = location.hash.slice(1);
+    const fromHash = FLAGS.find((f) => slug(f.ticker || f.cik) === want);
+    if (fromHash) current = fromHash;
+    renderMast(); renderStrip(); renderGroups(); renderRules(); bindControls(); apply();
+    select(view.includes(fromHash) ? fromHash : view[0] || null, false);
+    window.addEventListener('hashchange', () => { const f = FLAGS.find((x) => slug(x.ticker || x.cik) === location.hash.slice(1)); if (f && f !== current) select(f, false); });
+    // keep open tabs current: check for a newer scan every 2 minutes and whenever the tab comes back into view
+    setInterval(refresh, 2 * 60 * 1000); // the data file changes every ~10 minutes; checking every 2 keeps viewers within minutes of SEC
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+  }
+
+  let refreshing = false;
+  async function refresh() {
+    if (refreshing || document.hidden) return;
+    refreshing = true;
+    try {
+      const r = await fetch('data/flags.json', { cache: 'no-store' });
+      if (!r.ok) return;
+      const next = await r.json();
+      if (!next.meta || next.meta.generatedAt === DATA.meta.generatedAt) return;
+      const keepCik = current && current.cik; const keepMetric = metricSel;
+      const before = new Set(FLAGS.map((f) => f.cik + '|' + f.period));
+      DATA = next; FLAGS = DATA.flags || [];
+      const added = FLAGS.filter((f) => !before.has(f.cik + '|' + f.period)).length;
+      current = FLAGS.find((f) => f.cik === keepCik) || null;
+      renderMast(); renderStrip(); renderGroups(); apply();
+      if (current && view.includes(current)) { select(current, false); if (current.chart[keepMetric]) setMetric(keepMetric); }
+      toast(added ? `New scan loaded: ${added} new flag${added === 1 ? '' : 's'}` : 'New scan loaded');
+    } catch (e) { /* offline or mid-deploy: try again next time */ } finally { refreshing = false; }
+  }
+
+  function toast(msg) {
+    let t = $('toast');
+    if (!t) { t = document.createElement('div'); t.id = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
+    t.textContent = msg; t.hidden = false;
+    clearTimeout(t._h); t._h = setTimeout(() => { t.hidden = true; }, 6000);
+  }
+
+  function renderMast() {
+    const m = DATA.meta; const age = daysAgo(m.generatedAt);
+    $('banner').hidden = true;
+    const when = new Date(m.generatedAt);
+    $('runline').innerHTML = `<span class="dot${age > 2 ? ' stale' : ''}" aria-hidden="true"></span>Last scan <b>${esc(when.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }))} UTC</b>${age > 2 ? ' (stale)' : ''}<br>Window ${esc(m.window[0])}–${esc(m.window[1])} · ${m.framesFetched} frames · ${m.runSeconds}s`;
+    if (m.snapshot && !m.demo) {
+      $('banner').hidden = false;
+      const sn = m.snapshot;
+      const parts = [sn.fresh ? `the ${sn.fresh} flags from filings accepted in the last 48 hours` : '', `the ${sn.top} highest-scoring flags from the run`, sn.sampled ? `${sn.sampled} sampled from further down the ranking` : ''].filter(Boolean);
+      const list = parts.length > 1 ? parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1] : parts[0];
+      $('banner').innerHTML = `<b>Live snapshot from SEC EDGAR.</b> This view holds ${list}. The scheduled pipeline publishes the full top ${sn.rankedOf} and rescans every 10 minutes.${sn.note ? ' ' + esc(sn.note) : ''}`;
+    }
+    if (m.demo) {
+      $('banner').hidden = false;
+      $('banner').innerHTML = '<b>Demo data.</b> The companies below are fictional and were generated to exercise every rule. Real flags replace them after the first live scan of SEC EDGAR.';
+    }
+  }
+
+  function renderStrip() {
+    const m = DATA.meta;
+    const cov = m.coverage || {}; const latest = cov[m.latestQuarter] || 0; const prev = Math.max(...Object.values(cov), 1);
+    const share = Math.min(1, latest / prev);
+    const events = FLAGS.filter((f) => (f.events || []).length).length;
+    $('strip').innerHTML = `
+      <div><div class="label">Companies scanned</div><div class="v">${m.companiesScanned.toLocaleString('en-GB')}</div><div class="s">NYSE · Nasdaq · Cboe, ≥$1bn assets or ≥$500m revenue</div></div>
+      <div><div class="label">Flagged</div><div class="v">${m.companiesFlagged.toLocaleString('en-GB')}</div><div class="s">${FLAGS.some((f) => f.firstSeen) ? FLAGS.filter(isNew).length + ' new in the last 7 days' : 'First run, so nothing is marked new yet'} · ${events} shown with recent 8-K events</div></div>
+      <div><div class="label">${esc(m.latestQuarter)} results filed</div><div class="v">${Math.round(share * 100)}%</div><div class="meter" role="img" aria-label="${Math.round(share * 100)} percent of the universe has filed ${esc(m.latestQuarter)}"><i style="width:${(share * 100).toFixed(1)}%"></i></div><div class="s">Companies not yet filed are scanned on their prior quarter</div></div>
+      ${m.latestFeed ? `<div><div class="label">Filed in the last ${m.latestFeed.hours}h</div><div class="v">${m.latestFeed.periodic.toLocaleString('en-GB')} <span class="unit">10-Q/10-Ks</span></div><div class="s">${m.latestFeed.releases.toLocaleString('en-GB')} earnings releases · feed checked ${esc(ago(m.latestFeed.checkedAt))} · ${(m.baseEffectsSkipped || 0).toLocaleString('en-GB')} one-off base effects screened out</div></div>`
+      : `<div><div class="label">One-off base effects screened out</div><div class="v">${(m.baseEffectsSkipped || 0).toLocaleString('en-GB')}</div><div class="s">YoY moves caused by an unusual year-ago quarter, not a new shift</div></div>`}`;
+    renderJust();
+  }
+
+  let justAll = false;
+  // results table from a foreign issuer's 6-K, cells exactly as filed
+  function figTable(j) {
+    const f = j.figures, H = f.header || [];
+    const short = (h) => String(h).replace(/Current Period/i, 'This qtr').replace(/Previous Period/i, 'Prior qtr').replace(/Year-to-Year Comparison/i, 'Year ago').replace(/\s*\((Third|Second|First|Fourth) quarter of (\d{4})\)/i, (m, q, y) => ` ${({ third: 3, second: 2, first: 1, fourth: 4 })[q.toLowerCase()]}Q${String(y).slice(2)}`).replace(/Changes \(%\)/i, 'Δ%');
+    const cols = H.slice(1).map(short);
+    return `<div class="jsrc">${esc(j.form || '6-K')} results table${f.unit ? ` · ${esc(f.unit)}` : ''} · as filed</div>
+      <div class="figwrap"><table class="fig"><thead><tr><th></th>${cols.map((c) => `<th>${esc(c)}</th>`).join('')}</tr></thead>
+      <tbody>${f.rows.map((r) => `<tr><th>${esc(r[0].replace(/Profit from Continuing Operations( Before Income Tax)?/i, 'Pre-tax profit').replace(/Attributable To:? Controlling Interests/i, 'To shareholders').replace(/Profit \(Loss\) for the Period/i, 'Net profit'))}</th>${r.slice(1).map((c) => `<td class="${/^\(/.test(c) ? 'neg' : ''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  }
+  function renderJust() {
+    const J = (DATA.justReported || []).filter((j) => (j.headlines && j.headlines.length) || j.figures);
+    $('just').hidden = !J.length; if (!J.length) return;
+    const shown = justAll ? J : J.slice(0, 8);
+    $('justrow').innerHTML = shown.map((j) => `<article class="jcard${j.figures ? ' wide' : ''}">
+      <div class="jtop"><span class="tk">${esc(j.ticker || 'CIK ' + j.cik)}</span><span class="fresh">${esc(ago(j.accepted).toUpperCase())}</span>${j.flagged ? '<span class="pill">also flagged</span>' : ''}${j.foreign ? '<span class="pill">foreign filer · IFRS</span>' : ''}</div>
+      <div class="nm">${esc(j.name)}</div>
+      ${j.headlineSource === 'transcript' ? '<div class="jsrc">From the call transcript filed with the 8-K</div>' : ''}
+      ${j.figures ? figTable(j) : ''}
+      ${j.headlines.slice(0, 2).map((h) => `<blockquote class="${h.management ? 'mg' : ''}">${esc(h.text)}</blockquote>`).join('')}
+      <div class="jlinks">${j.releaseUrl ? `<a href="${esc(j.releaseUrl)}" target="_blank" rel="noopener">Earnings release</a>` : ''}${j.transcriptUrl ? ` · <a href="${esc(j.transcriptUrl)}" target="_blank" rel="noopener">Call transcript / remarks</a>` : ''}${j.index ? ` · <a href="${esc(j.index)}" target="_blank" rel="noopener">Filing</a>` : ''}</div>
+    </article>`).join('');
+    $('justmore').hidden = J.length <= 8; $('justmore').textContent = justAll ? 'Show fewer' : `Show all ${J.length}`;
+    $('justmore').onclick = () => { justAll = !justAll; renderJust(); };
+  }
+
+  const GROUPS = ['All', 'P&L', 'Balance sheet', 'Quality', 'Structure', 'Event'];
+  function renderGroups() {
+    const counts = {}; for (const f of FLAGS) for (const g of new Set(f.reasons.map((r) => r.group))) counts[g] = (counts[g] || 0) + 1;
+    counts.All = FLAGS.length;
+    $('groups').innerHTML = GROUPS.filter((g) => counts[g]).map((g) => `<button class="chip" type="button" data-g="${esc(g)}" aria-pressed="${state.group === g}">${g === 'Event' ? '8-K events' : esc(g)}<span class="c">${counts[g]}</span></button>`).join('');
+  }
+
+  function renderRules() {
+    const T = {
+      cashDrop: 'Cash down ≥40% YoY or ≥35% QoQ, and the drop is ≥5% of total assets',
+      cashSurge: 'Cash up ≥100% YoY or ≥75% QoQ, adding ≥5% of total assets',
+      niSwing: 'Net income changes sign YoY with a swing ≥8% of quarterly revenue (z ≥ 2), or doubles / falls ≥60% with a ≥$50m move',
+      revenueShock: 'Quarterly revenue down ≥20% or up ≥50% YoY, moving ≥$50m',
+      marginShift: 'Operating margin moves ≥15 percentage points YoY, and operating income moves ≥1% of assets',
+      leverageJump: 'Long-term debt up ≥50% YoY or ≥35% QoQ, adding ≥5% of total assets',
+      equityErosion: "Shareholders' equity turns negative, or falls ≥30% YoY by ≥5% of assets",
+      goodwillHit: 'Goodwill down ≥20% in one quarter, ≥2% of total assets',
+      receivables: 'Receivables growth beats revenue growth by ≥30pp, ≥2% of assets',
+      inventory: 'Inventory growth beats revenue growth by ≥40pp, ≥2% of assets',
+      balanceSheet: 'Total assets up ≥50% or down ≥30% YoY by at least $1bn',
+    };
+    const R = DATA.meta.rules || {};
+    $('rulesTable').querySelector('tbody').innerHTML = Object.keys(T).map((k) => `<tr><td>${esc((R[k] || {}).label || k)}</td><td style="text-align:left;white-space:normal">${esc(T[k])}</td></tr>`).join('') +
+      '<tr><td>All rules</td><td style="text-align:left;white-space:normal">Moves under $25m are ignored. YoY moves must sit at least 3 robust standard deviations outside the company\'s own last eight YoY changes. A YoY move is dropped when the latest quarter is in line with the three before it (the year-ago quarter was the outlier).</td></tr>';
+  }
+
+  function bindControls() {
+    $('q').addEventListener('input', (e) => { state.q = e.target.value.trim().toLowerCase(); apply(); });
+    $('groups').addEventListener('click', (e) => { const b = e.target.closest('.chip'); if (!b) return; state.group = b.dataset.g; [...$('groups').children].forEach((c) => c.setAttribute('aria-pressed', c === b)); save(); apply(); });
+    $('tier').value = state.tier; $('tier').addEventListener('change', (e) => { state.tier = e.target.value; save(); apply(); });
+    $('minscore').value = String(state.min); $('minscore').addEventListener('change', (e) => { state.min = +e.target.value; save(); apply(); });
+    $('sort').value = state.sort; $('sort').addEventListener('change', (e) => { state.sort = e.target.value; save(); apply(); });
+    $('freshonly').setAttribute('aria-pressed', state.freshOnly); $('freshonly').addEventListener('click', (e) => { state.freshOnly = !state.freshOnly; e.currentTarget.setAttribute('aria-pressed', state.freshOnly); save(); apply(); });
+    $('newonly').setAttribute('aria-pressed', state.newOnly); $('newonly').addEventListener('click', (e) => { state.newOnly = !state.newOnly; e.currentTarget.setAttribute('aria-pressed', state.newOnly); save(); apply(); });
+    $('items').addEventListener('click', (e) => { const it = e.target.closest('.item'); if (it) select(view[+it.dataset.i], true); });
+    $('items').addEventListener('keydown', (e) => {
+      const it = e.target.closest('.item'); if (!it) return; const i = +it.dataset.i;
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(view[i], true); }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const n = $('items').children[i + (e.key === 'ArrowDown' ? 1 : -1)]; if (n) { n.focus(); select(view[+n.dataset.i], false); } }
+    });
+  }
+
+  function apply() {
+    view = FLAGS.filter((f) => {
+      if (state.q && !(`${f.ticker || ''} ${f.name || ''}`.toLowerCase().includes(state.q))) return false;
+      if (state.group !== 'All' && !f.reasons.some((r) => r.group === state.group)) return false;
+      if (state.tier && f.tier !== state.tier) return false;
+      if (f.score < state.min) return false;
+      if (state.newOnly && !isNew(f)) return false;
+      if (state.freshOnly && !isFresh(f)) return false;
+      return true;
+    });
+    if (state.sort === 'filed') view.sort((a, b) => String(acceptedOf(b) || '').localeCompare(String(acceptedOf(a) || '')) || b.score - a.score);
+    else if (state.sort === 'new') view.sort((a, b) => String(b.firstSeen || '').localeCompare(String(a.firstSeen || '')) || b.score - a.score);
+    else if (state.sort === 'ticker') view.sort((a, b) => String(a.ticker || '').localeCompare(String(b.ticker || '')));
+    else view.sort((a, b) => b.score - a.score);
+    renderList();
+    if (current && !view.includes(current)) select(view[0] || null, false);
+    else if (!current && view.length) select(view[0], false);
+  }
+
+  function renderList() {
+    $('count').textContent = `${view.length} of ${FLAGS.length}`;
+    if (!view.length) { $('items').innerHTML = '<div class="empty">No flags match these filters.</div>'; return; }
+    $('items').innerHTML = view.map((f, i) => {
+      const lv = level(f.score); const top = f.reasons[0];
+      return `<div class="item" role="option" tabindex="0" data-i="${i}" aria-current="${f === current}" aria-selected="${f === current}">
+        <span class="stripe" style="background:var(--${lv.k})"></span>
+        <span class="sc" title="${lv.t}">${f.score}</span>
+        <span class="who"><div class="tk">${esc(f.ticker || 'CIK ' + f.cik)}${isFresh(f) ? `<span class="fresh" title="Filing accepted ${esc(acceptedOf(f))}">FILED ${esc(ago(acceptedOf(f)).toUpperCase())}</span>` : isNew(f) ? '<span class="new">NEW</span>' : ''}${f.corroboration && f.corroboration.quotes.some((q) => q.verified) ? '<span class="qv" title="A statement in the filing confirms the figure">✓ quoted</span>' : ''}</div>
+          <div class="nm">${esc(f.name)}</div>
+          <div class="why">${esc(top.label)} · <span class="num">${esc(f.period)}</span></div></span>
+        ${spark(f.chart[top.metric] || [])}
+      </div>`;
+    }).join('');
+  }
+
+  function spark(series) {
+    const pts = series.map((d, i) => [i, d[1]]).filter((p) => p[1] != null);
+    if (pts.length < 2) return '<span></span>';
+    const W = 84, H = 30, n = series.length - 1;
+    const vals = pts.map((p) => p[1]); let lo = Math.min(...vals), hi = Math.max(...vals); if (hi === lo) { hi += 1; lo -= 1; }
+    const x = (i) => 2 + (i / n) * (W - 6), y = (v) => 3 + (1 - (v - lo) / (hi - lo)) * (H - 6);
+    const d = pts.map((p, k) => `${k ? 'L' : 'M'}${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join('');
+    const last = pts[pts.length - 1];
+    const zero = lo < 0 && hi > 0 ? `<line x1="0" x2="${W}" y1="${y(0)}" y2="${y(0)}" stroke="var(--line)" stroke-width="1"/>` : '';
+    return `<svg class="spark" viewBox="0 0 ${W} ${H}" aria-hidden="true">${zero}<path d="${d}" fill="none" stroke="var(--faint)" stroke-width="1.5" stroke-linejoin="round"/><circle cx="${x(last[0])}" cy="${y(last[1])}" r="3" fill="var(--accent)"/></svg>`;
+  }
+
+  // ---------- detail
+  function select(f, scroll) {
+    current = f;
+    [...$('items').children].forEach((el) => { if (el.dataset) { const on = view[+el.dataset.i] === f; el.setAttribute('aria-current', on); el.setAttribute('aria-selected', on); } });
+    if (!f) { $('detail').innerHTML = '<div class="empty">Nothing to show for these filters.</div>'; return; }
+    metricSel = f.reasons[0].metric;
+    const h = '#' + slug(f.ticker || f.cik); if (location.hash !== h) { try { history.replaceState(null, '', h); } catch (e) { location.hash = h; } }
+    renderDetail();
+    if (scroll && window.matchMedia('(max-width: 900px)').matches) $('detail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function renderDetail() {
+    const f = current; const lv = level(f.score);
+    const edgar = `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${f.cik}&type=&dateb=&owner=include&count=40`;
+    const filing = f.docUrl ? `<a href="${esc(f.docUrl)}" target="_blank" rel="noopener">${esc(f.form || 'Filing')}${f.filed ? ' filed ' + esc(fmtDate(f.filed)) : ''}</a>` : '';
+    const metrics = Object.keys(f.chart);
+    const order = [...new Set([...f.reasons.filter((r) => r.metric).map((r) => r.metric), ...metrics])].filter((m) => f.chart[m]);
+    const events = f.events || [];
+    $('detail').innerHTML = `
+      <div class="dhead">
+        <div style="min-width:0">
+          <h2><span class="tkr">${esc(f.ticker || 'CIK ' + f.cik)}</span>${esc(f.name)}</h2>
+          <div class="meta"><span>${esc(f.exchange || '')}${f.tier ? ' · ' + esc(f.tier) + ' (by assets / revenue)' : ''}</span>${f.industry ? `<span>${esc(f.industry)}${f.sic ? ' (SIC ' + esc(f.sic) + ')' : ''}</span>` : ''}<span>Period <b class="num">${esc(f.period)}</b></span>${f.assets ? `<span>Assets <b class="num">${money(f.assets)}</b></span>` : ''}${f.revenueTTM ? `<span>Revenue TTM <b class="num">${money(f.revenueTTM)}</b></span>` : ''}</div>
+          <div class="meta">${filing ? `<span>${filing}</span>` : ''}<span><a href="${edgar}" target="_blank" rel="noopener">All EDGAR filings</a></span>${f.firstSeen ? `<span>First flagged ${esc(fmtDate(f.firstSeen))}</span>` : ''}</div>
+        </div>
+        <div class="scorebox">
+          <div class="conf"><b>${esc(f.confidence)} confidence.</b> ${esc(f.confidenceNote)}</div>
+          <div class="bigscore"><div class="n">${f.score}</div><span class="status">${shape(lv.k)}${lv.t}</span></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="tabs" role="tablist" aria-label="Line item">${order.map((m) => `<button class="tab" role="tab" type="button" data-m="${m}" aria-selected="${m === metricSel}">${esc(metricLabel(m))}</button>`).join('')}</div>
+        <div id="chartArea"></div>
+      </div>
+      <div class="section">
+        <h3>Why it was flagged</h3>
+        <div class="reasons">${f.reasons.map((r, i) => reasonHtml(r, i)).join('')}</div>
+      </div>
+      ${quotesHtml(f)}
+      ${events.length ? `<div class="section"><h3>Recent 8-K events</h3><ul class="events">${events.map((e) => `<li><span class="date">${esc(e.date)}</span><span>${e.items.map((it) => `<span class="code">Item ${esc(it.code)}</span> ${esc(it.label)}`).join(' · ')} — <a href="${esc(e.url)}" target="_blank" rel="noopener">filing</a></span></li>`).join('')}</ul></div>` : ''}
+      <div class="section">
+        <h3>Context</h3>
+        <div class="multiples">${['revenue', 'netIncome', 'cash'].filter((m) => f.chart[m]).map((m) => mini(m, f.chart[m])).join('')}</div>
+      </div>
+      <div class="section">
+        <div class="prov"><span>XBRL tags used: ${Object.entries(f.tags || {}).filter(([k]) => f.chart[k]).map(([k, t]) => `<code>${esc(t)}</code>`).join(' ')}</span><span>CIK <span class="num">${f.cik}</span></span>${f.accn ? `<span>Accession <span class="num">${esc(f.accn)}</span></span>` : ''}</div>
+      </div>`;
+    $('detail').querySelector('.tabs').addEventListener('click', (e) => { const b = e.target.closest('.tab'); if (b) setMetric(b.dataset.m); });
+    $('detail').querySelector('.reasons').addEventListener('click', (e) => { const b = e.target.closest('.reason'); if (b && b.dataset.m && f.chart[b.dataset.m]) setMetric(b.dataset.m); });
+    renderChart();
+  }
+
+  function quotesHtml(f) {
+    const c = f.corroboration;
+    if (!c) return `<div class="section"><h3>What the company said</h3><p class="muted">Not checked in this run. Each run reads the filings behind every fresh flag and the 80 highest-scoring ones.</p></div>`;
+    const srcs = (c.sources || []).map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}</a>`).join(' · ');
+    if (!c.quotes.length) return `<div class="section"><h3>What the company said</h3><p class="muted">No sentence in ${srcs || 'the filing'} states these figures or discusses them directly${c.error ? ' (' + esc(c.error) + ')' : ''}. Treat the flag as unexplained until you have read the filing.</p></div>`;
+    return `<div class="section"><h3>What the company said</h3>
+      <div class="quotes">${c.quotes.map((q) => `<figure class="quote ${q.verified ? 'ok' : ''}">
+        <blockquote>${esc(q.text)}</blockquote>
+        <figcaption>
+          ${q.verified ? `<span class="vchip ok">✓ Figure verified: ${esc(q.figure)}</span>` : '<span class="vchip">Context only: no figure stated</span>'}
+          ${q.management ? '<span class="vchip">Management</span>' : ''}
+          <span>supports <b>${esc(q.reasonLabel)}</b></span>
+          <a href="${esc(q.url)}" target="_blank" rel="noopener">${esc(q.source)}</a>
+        </figcaption></figure>`).join('')}</div>
+      <p class="muted small">Quoted verbatim from the documents checked: ${srcs}. “Figure verified” means the number in the sentence equals the flagged value to the precision the company wrote it.</p></div>`;
+  }
+
+  function setMetric(m) {
+    metricSel = m;
+    $('detail').querySelectorAll('.tab').forEach((t) => t.setAttribute('aria-selected', t.dataset.m === m));
+    $('detail').querySelectorAll('.reason').forEach((t) => t.setAttribute('aria-pressed', t.dataset.m === m && t.dataset.first === '1'));
+    renderChart();
+  }
+
+  function reasonHtml(r, i) {
+    const lv = level(r.severity); const isEvent = r.rule === 'event';
+    const first = current.reasons.findIndex((x) => x.metric === r.metric) === i ? '1' : '0';
+    return `<button class="reason" type="button" data-m="${esc(r.metric || '')}" data-first="${first}" aria-pressed="${r.metric === metricSel && first === '1'}">
+      <div><div class="rl">${esc(r.label)}</div><div class="rg">${esc(r.group)}${r.basis && !isEvent ? ` · <span class="pill">${esc(r.basis)}</span>` : ''}</div>
+        <div class="sev"><div class="bar"><i style="width:${r.severity}%;background:var(--${lv.k})"></i></div><div class="t">${shape(lv.k).replace('<svg', '<svg width="9" height="9"')} severity ${r.severity}</div></div></div>
+      <div style="min-width:0"><p>${esc(r.text)}</p>
+        <div class="foot">${r.z != null ? `<span>z = <span class="num">${Math.abs(r.z) > 10 ? (r.z > 0 ? '>10' : '<−10') : r.z.toFixed(1).replace('-', '−')}</span></span>` : ''}${r.materiality != null ? `<span>materiality <span class="num">${(r.materiality * 100).toFixed(1)}%</span></span>` : ''}${r.firstSeen ? `<span>first seen ${esc(fmtDate(r.firstSeen))}</span>` : ''}${r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">Open 8-K</a>` : ''}${r.dataWarning ? `<span class="warn">${esc(r.dataWarning)}</span>` : ''}</div></div>
+    </button>`;
+  }
+
+  // ---------- main bar chart
+  function niceTicks(lo, hi, n) {
+    const span = hi - lo || Math.abs(hi) || 1; const step0 = span / n; const mag = Math.pow(10, Math.floor(Math.log10(step0)));
+    const step = [1, 2, 2.5, 5, 10].map((k) => k * mag).find((s) => s >= step0) || 10 * mag;
+    const a = Math.floor(lo / step) * step, b = Math.ceil(hi / step) * step; const out = [];
+    for (let v = a; v <= b + step / 2; v += step) out.push(Math.abs(v) < step / 1e6 ? 0 : v);
+    return out;
+  }
+  function barPath(x, w, y0, y1) {
+    const r = Math.min(4, w / 2, Math.abs(y1 - y0)); const top = Math.min(y0, y1), bot = Math.max(y0, y1);
+    if (y1 <= y0) return `M${x},${bot}V${top + r}Q${x},${top} ${x + r},${top}H${x + w - r}Q${x + w},${top} ${x + w},${top + r}V${bot}Z`; // positive: round top
+    return `M${x},${top}V${bot - r}Q${x},${bot} ${x + r},${bot}H${x + w - r}Q${x + w},${bot} ${x + w},${bot - r}V${top}Z`; // negative: round bottom
+  }
+
+  function renderChart() {
+    const f = current, m = metricSel, s = f.chart[m]; if (!s) return;
+    const reason = f.reasons.find((r) => r.metric === m && r.rule !== 'event');
+    const n = s.length, t = n - 1;
+    const lag = reason ? (reason.basis === 'QoQ' ? 1 : 4) : 4; const c = t - lag;
+    const v0 = s[t][1], v1 = c >= 0 ? s[c][1] : null;
+    const flip = v0 != null && v1 != null && v0 * v1 < 0;
+    const change = v0 != null && v1 != null && v1 !== 0 ? (v0 - v1) / Math.abs(v1) : null;
+    const chText = flip ? `${v0 - v1 > 0 ? '+' : ''}${money(v0 - v1)}` : pct(change);
+    const W = Math.round(Math.max(340, Math.min(760, $('chartArea').clientWidth || 720))), H = 300, L = 66, R = 18, T = 34, B = 34;
+    const vals = s.map((d) => d[1]).filter((v) => v != null);
+    const ticks = niceTicks(Math.min(0, ...vals), Math.max(0, ...vals), 4);
+    const lo = ticks[0], hi = ticks[ticks.length - 1];
+    const y = (v) => T + (1 - (v - lo) / (hi - lo || 1)) * (H - T - B);
+    const band = (W - L - R) / n, bw = Math.min(38, band * 0.62);
+    const xc = (i) => L + band * i + band / 2;
+    let g = `<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="var(--bar)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--surface)" stroke-width="2"/></pattern></defs>`;
+    for (const tv of ticks) g += `<line x1="${L}" x2="${W - R}" y1="${y(tv)}" y2="${y(tv)}" stroke="${tv === 0 ? 'var(--faint)' : 'var(--grid)'}" stroke-width="1"/><text x="${L - 8}" y="${y(tv) + 4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="var(--f-mono)">${money(tv, true)}</text>`;
+    s.forEach((d, i) => {
+      const [q, v, derived] = d; const x = xc(i) - bw / 2;
+      const stride = band < 44 ? 4 : 2;
+      const showLab = i === t || (i % stride === t % stride && i < t - 1) || (i === c && stride === 2);
+      if (showLab) g += `<text x="${xc(i)}" y="${H - B + 18}" text-anchor="middle" font-size="11" fill="${i === t ? 'var(--ink)' : 'var(--muted)'}" font-weight="${i === t ? 600 : 400}" font-family="var(--f-mono)">${q.replace('Q', ' Q')}</text>`;
+      if (v == null) { g += `<text x="${xc(i)}" y="${y(0) - 6}" text-anchor="middle" font-size="10" fill="var(--faint)">n/a</text>`; return; }
+      let fill = 'var(--bar)', stroke = 'none';
+      if (i === t) fill = 'var(--accent)';
+      else if (i === c) { fill = 'var(--accent-soft)'; stroke = 'var(--accent)'; }
+      else if (derived) fill = 'url(#hatch)';
+      g += `<path d="${barPath(x, bw, y(0), y(v))}" fill="${fill}" stroke="${stroke}" stroke-width="${stroke === 'none' ? 0 : 1.5}"/>`;
+      if (i === t && derived) g += `<path d="${barPath(x, bw, y(0), y(v))}" fill="url(#hatch)" opacity=".35"/>`;
+    });
+    // comparison bracket
+    if (v0 != null && v1 != null) {
+      const yA = y(v1), yB = y(v0), xA = xc(c), xB = xc(t);
+      g += `<line x1="${xA}" x2="${xB + bw / 2 + 6}" y1="${yA}" y2="${yA}" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+      const ax = xB + bw / 2 + 6;
+      if (Math.abs(yB - yA) > 8) {
+        const dir = yB > yA ? 1 : -1;
+        g += `<line x1="${ax}" x2="${ax}" y1="${yA}" y2="${yB - dir * 2}" stroke="var(--ink)" stroke-width="1.5"/><path d="M${ax - 4},${yB - dir * 7}L${ax},${yB}L${ax + 4},${yB - dir * 7}" fill="none" stroke="var(--ink)" stroke-width="1.5"/>`;
+      }
+      const ly = Math.max(14, Math.min(yA, yB) - 10);
+      g += `<text x="${xB + bw / 2}" y="${ly}" text-anchor="end" font-size="13" font-weight="700" fill="var(--ink)" font-family="var(--f-mono)">${chText} ${lag === 1 ? 'QoQ' : 'YoY'}</text>`;
+    }
+    // hover targets
+    s.forEach((d, i) => { g += `<rect class="hit" data-i="${i}" x="${L + band * i}" y="${T}" width="${band}" height="${H - T - B}" fill="transparent"/>`; });
+
+    const dirWord = change == null ? '' : change < 0 ? 'down' : 'up';
+    $('chartArea').innerHTML = `
+      <div class="charthead"><div><div class="label">${esc(metricLabel(m))} by calendar quarter</div>
+        <div style="font-size:13.5px;color:var(--muted);margin-top:2px">${esc(s[t][0])} <b class="num" style="color:var(--ink)">${money(v0)}</b> vs ${c >= 0 ? esc(s[c][0]) : ''} <b class="num" style="color:var(--ink)">${money(v1)}</b></div></div>
+        <div class="delta" aria-label="${esc(metricLabel(m))} ${dirWord} ${chText}">${chText} <span class="label">${flip ? (v0 < 0 ? 'swing to loss' : 'swing to profit') + ' ' : ''}${lag === 1 ? 'QoQ' : 'YoY'}</span></div></div>
+      <div class="chartbox"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(metricLabel(m))} for ${esc(f.ticker || f.name)} over ${n} quarters; latest ${money(v0)}, ${chText} ${lag === 1 ? 'quarter-on-quarter' : 'year-on-year'}">${g}</svg><div class="tip" hidden></div></div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Latest quarter</span><span><i style="background:var(--accent-soft);outline:1.5px solid var(--accent);outline-offset:-1.5px"></i>Comparison quarter</span>${s.some((d) => d[2]) ? '<span><i style="background:repeating-linear-gradient(45deg,var(--bar) 0 3px,var(--surface) 3px 5px)"></i>Fiscal Q4 derived from 10-K</span>' : ''}</div>
+      <details style="margin-top:10px"><summary>Show values as a table</summary><div class="tablewrap"><table><thead><tr><th>Quarter</th>${s.map((d) => `<th>${esc(d[0])}</th>`).join('')}</tr></thead><tbody><tr><td>${esc(metricLabel(m))}</td>${s.map((d) => `<td class="num">${money(d[1])}${d[2] ? '*' : ''}</td>`).join('')}</tr></tbody></table></div></details>`;
+    const svg = $('chartArea').querySelector('svg'), tip = $('chartArea').querySelector('.tip'), box = $('chartArea').querySelector('.chartbox');
+    svg.addEventListener('mousemove', (e) => {
+      const h = e.target.closest('.hit'); if (!h) { tip.hidden = true; return; }
+      const i = +h.dataset.i, d = s[i]; const prevY = s[i - 4] && s[i - 4][1];
+      const yoy = d[1] != null && prevY ? (d[1] - prevY) / Math.abs(prevY) : null;
+      tip.innerHTML = `${esc(d[0])}${d[2] ? ' (derived)' : ''}<br>${money(d[1])}${yoy != null ? ` · ${pct(yoy)} YoY` : ''}`;
+      const r = box.getBoundingClientRect(), sr = svg.getBoundingClientRect();
+      const px = (xc(i) / W) * sr.width + (sr.left - r.left);
+      const py = ((d[1] != null ? Math.min(y(d[1]), y(0)) : y(0)) / H) * sr.height;
+      tip.style.left = Math.max(60, Math.min(r.width - 60, px)) + 'px'; tip.style.top = py + 'px'; tip.hidden = false;
+    });
+    svg.addEventListener('mouseleave', () => { tip.hidden = true; });
+  }
+
+  function mini(m, s) {
+    const pts = s.map((d, i) => [i, d[1]]).filter((p) => p[1] != null);
+    const last = s[s.length - 1][1], yago = s.length > 4 ? s[s.length - 5][1] : null;
+    const ch = last != null && yago ? (last - yago) / Math.abs(yago) : null;
+    const W = 220, H = 54, n = s.length - 1;
+    let body = '';
+    if (pts.length >= 2) {
+      const vals = pts.map((p) => p[1]); let lo = Math.min(0, ...vals), hi = Math.max(0, ...vals); if (hi === lo) hi = lo + 1;
+      const x = (i) => 3 + (i / n) * (W - 6), y = (v) => 4 + (1 - (v - lo) / (hi - lo)) * (H - 8);
+      const line = pts.map((p, k) => `${k ? 'L' : 'M'}${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join('');
+      const area = `${line}L${x(pts[pts.length - 1][0])},${y(0)}L${x(pts[0][0])},${y(0)}Z`;
+      const lp = pts[pts.length - 1];
+      body = `<line x1="0" x2="${W}" y1="${y(0)}" y2="${y(0)}" stroke="var(--line)"/><path d="${area}" fill="var(--accent-soft)" opacity=".7"/><path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/><circle cx="${x(lp[0])}" cy="${y(lp[1])}" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="1.5"/>`;
+    }
+    const cls = ch == null ? '' : '';
+    return `<div class="mini"><div class="h"><b>${esc(metricLabel(m))}</b><span>${money(last)}</span></div><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${esc(metricLabel(m))} trend over ${s.length} quarters">${body}</svg><div class="d ${cls}">${pct(ch)} YoY · ${esc(s[0][0])}–${esc(s[s.length - 1][0])}</div></div>`;
+  }
+
+  let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (current) renderChart(); }, 150); });
+  load();
+})();
+</script>
