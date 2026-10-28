@@ -41,15 +41,23 @@ async function get(url, as) {
       if (attempt === 4) throw e;
       await new Promise((r) => setTimeout(r, 1000 * attempt * attempt)); continue;
     }
-    consecutiveFailures = 0;
-    if (res.status === 404) return null;
-    if (res.ok) return as === 'json' ? res.json() : res.text();
+    if (res.status === 404) { consecutiveFailures = 0; return null; }
+    if (res.ok) { consecutiveFailures = 0; return as === 'json' ? res.json() : res.text(); }
+    if (res.status === 429 || res.status >= 500 || res.status === 403) {
+      // SEC refusing (rate limit, block, or an unacceptable User-Agent): say why and stop instead of backing off for minutes
+      if (++consecutiveFailures >= 12) {
+        const body = (await res.text().catch(() => '')).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 300);
+        console.error(`SEC refused 12 requests in a row (HTTP ${res.status}). Last response: ${body}`); process.exit(1);
+      }
+    }
     if ((res.status === 429 || res.status >= 500 || res.status === 403) && attempt < 4) {
       await new Promise((r) => setTimeout(r, 2000 * attempt * attempt)); continue;
     }
     throw new Error(`HTTP ${res.status} for ${url}`);
   }
 }
+// hard stop well inside the schedule, so runs never pile up
+setTimeout(() => { console.error('Scan took over 9 minutes; stopping and keeping previous data.'); process.exit(1); }, 9 * 60e3).unref();
 const fetchJson = (url) => get(url, 'json');
 const fetchText = (url) => get(url, 'text');
 const log = (m) => console.log(m);

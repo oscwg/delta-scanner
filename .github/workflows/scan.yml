@@ -36,7 +36,9 @@ jobs:
         run: node test/engine.test.js && node test/filings.test.js
 
       - name: Scan SEC EDGAR
-        run: node scan.js
+        run: |
+          set -o pipefail
+          node scan.js 2>&1 | tee docs/data/scan-log.txt
         env:
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}   # optional; falls back to secUserAgent in config.json
 
@@ -56,10 +58,12 @@ jobs:
       # Only the small first-seen history is committed, so the repo doesn't grow with every scan.
       # The commit also counts as activity, which stops GitHub pausing the schedule.
       - name: Save history
+        if: always()   # the scan log is saved even when a scan fails, so problems can be diagnosed from the repo
         run: |
           git config user.name "delta-scanner-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           node -e "const m=require('./docs/data/flags.json').meta;require('fs').writeFileSync('docs/data/last-run.json',JSON.stringify({generatedAt:m.generatedAt,companiesScanned:m.companiesScanned,companiesFlagged:m.companiesFlagged}))"
-          git add docs/data/history.json docs/data/last-run.json docs/data/quote-cache.json
+          tail -c 20000 docs/data/scan-log.txt > /tmp/l 2>/dev/null && mv /tmp/l docs/data/scan-log.txt || true
+          for f in docs/data/scan-log.txt docs/data/history.json docs/data/last-run.json docs/data/quote-cache.json; do [ -f "$f" ] && git add "$f"; done
           git commit -m "Scan $(date -u +%Y-%m-%dT%H:%MZ)" || echo "No changes to commit"
           git push
