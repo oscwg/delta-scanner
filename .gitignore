@@ -1,2 +1,4 @@
 node_modules/
 *.zip
+.sec-agent
+scan.log

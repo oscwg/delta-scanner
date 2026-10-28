@@ -222,6 +222,7 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 0 28px; }
       <p>Sudden shifts in the financial statements of US-listed companies, caught from SEC XBRL filings and ranked by how far they break from each company's own history.</p>
     </div>
     <div class="runline" id="runline">Loading scan…</div>
+    <div class="runline" id="livestat" hidden></div>
   </header>
   <div class="banner" id="banner" hidden></div>
 
@@ -339,6 +340,17 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 0 28px; }
     select(view.includes(fromHash) ? fromHash : view[0] || null, false);
     window.addEventListener('hashchange', () => { const f = FLAGS.find((x) => slug(x.ticker || x.cik) === location.hash.slice(1)); if (f && f !== current) select(f, false); });
     // keep open tabs current: check for a newer scan every 2 minutes and whenever the tab comes back into view
+    // when served by serve.js on this computer, show whether a scan is running and when the next one is due
+    const live = async () => {
+      try {
+        const r = await fetch('api/status', { cache: 'no-store' }); if (!r.ok) return;
+        const st = await r.json(); const el = $('livestat'); el.hidden = false;
+        const t = (iso) => iso ? new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '–';
+        el.innerHTML = st.running ? '<span class="dot" aria-hidden="true"></span>Scanning SEC now…' : `Next scan ${esc(t(st.nextAt))} · every ${st.everyMinutes} min${st.lastError ? ` · <span class="warn">last scan failed, showing previous data</span>` : ''}`;
+        if (!st.running && st.lastOk && st.lastOk !== live.lastOk) { if (live.lastOk) refresh(); live.lastOk = st.lastOk; }
+      } catch (e) {}
+    };
+    live(); setInterval(live, 20000);
     setInterval(refresh, 2 * 60 * 1000); // the data file changes every ~10 minutes; checking every 2 keeps viewers within minutes of SEC
     document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
   }

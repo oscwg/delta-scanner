@@ -28,6 +28,7 @@ async function slot() {
   if (wait) await new Promise((r) => setTimeout(r, wait));
 }
 
+let consecutiveFailures = 0;
 async function get(url, as) {
   for (let attempt = 1; attempt <= 4; attempt++) {
     await slot();
@@ -35,9 +36,12 @@ async function get(url, as) {
     try {
       res = await fetch(url, { signal: AbortSignal.timeout(30000), headers: { 'User-Agent': UA, 'Accept-Encoding': 'gzip, deflate', Accept: as === 'json' ? 'application/json' : '*/*' } }); // a hung request must not block a slot
     } catch (e) {
+      // network down or SEC unreachable: give up quickly and keep the previous data rather than retrying for minutes
+      if (++consecutiveFailures >= 12) { console.error(`SEC unreachable (${e.message}). Keeping previous data.`); process.exit(1); }
       if (attempt === 4) throw e;
       await new Promise((r) => setTimeout(r, 1000 * attempt * attempt)); continue;
     }
+    consecutiveFailures = 0;
     if (res.status === 404) return null;
     if (res.ok) return as === 'json' ? res.json() : res.text();
     if ((res.status === 429 || res.status >= 500 || res.status === 403) && attempt < 4) {

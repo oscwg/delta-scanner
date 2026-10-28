@@ -13,6 +13,16 @@ GitHub Actions (every 3h) ──► SEC EDGAR XBRL frames + Submissions APIs
    docs/  ──deploy──►  https://<you>.github.io/<repo>/   ◄── friends' browsers re-check every 5 min
 ```
 
+## Run it on your Mac (localhost)
+
+Double-click **Start Delta Scanner.command**. The first time, it asks for your name and email: the SEC requires every automated tool to identify itself, and this goes only to sec.gov in the request header. Your browser then opens **http://localhost:8787**, which rescans SEC every 10 minutes (on the clock: :00, :10, :20…). Open tabs pick up each new scan by themselves, and the line under *Last scan* shows when the next one is due.
+
+- Keep the Terminal window open while you use it; close it to stop. Nothing runs when it is closed, and the page shows the last scan's data.
+- If macOS says the file can't be opened because it is from an unidentified developer, right-click it → **Open** → **Open** (once only).
+- Uses Node.js 18+ if installed, otherwise the Node runtime built into the Claude desktop app.
+- If a scan fails (no internet, SEC busy), the previous data stays on screen and the next scan retries. Details go to `scan.log`.
+- Only your computer can open localhost. To share with friends, use the GitHub Pages setup above.
+
 ## Put it online (about 10 minutes, no coding)
 
 You need a free GitHub account. The repository must be **public**: free accounts can only publish Pages from public repos, and public repos get unlimited Actions minutes. Nothing private is in it; your SEC contact email lives in a secret, not in the code.
