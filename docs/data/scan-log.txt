@@ -1,3 +1,18 @@
-  ! feed 10-Q @0: HTTP 403 for https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=10-Q&company=&dateb=&owner=include&start=0&count=100&output=atom
-  ! feed 10-K @0: HTTP 403 for https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=10-K&company=&dateb=&owner=include&start=0&count=100&output=atom
-SEC refused 12 requests in a row (HTTP 403). Last response:  SEC.gov | Your Request Originates from an Undeclared Automated Tool html {height: 100%} body {height: 100%; margin:0; padding:0;} #header {background-color:#003968; color:#fff; padding:15px 20px 10px 20px;font-family:Arial, Helvetica, sans-serif; font-size:20px; border-bottom:solid 5px #000;} #foot
+Latest-filings feed: 979 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
+Fetching 195 XBRL frames (2023Q4–2026Q3)…
+  25/195 frames
+  50/195 frames
+  75/195 frames
+  100/195 frames
+  125/195 frames
+  150/195 frames
+  175/195 frames
+Frames done (0 empty or unavailable).
+Derived 25486 fiscal-Q4 values from annual filings.
+Fetching filing history for 262 flagged companies…
+Scanned 2452 companies; 578 flagged; kept top 262.
+Corroborating 80 flags from their filings…
+Corroboration done: 68/80 flags have validated statements.
+Earnings releases awaiting a 10-Q: 40.
+Foreign-issuer results (6-K): 3.
+Wrote 262 flags (998 KB).
