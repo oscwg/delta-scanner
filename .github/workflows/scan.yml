@@ -6,6 +6,8 @@ on:
     # A full scan is ~600 SEC requests paced under the 10 req/s fair-access limit.
     - cron: '*/10 * * * *'
   workflow_dispatch: {}
+  push:
+    branches: [main]   # code changes rescan at once (the bot's own history commits never trigger this)
 
 permissions:
   contents: write   # commit the small history file
@@ -36,13 +38,15 @@ jobs:
       - name: Scan SEC EDGAR
         run: node scan.js
         env:
-          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}   # optional; falls back to secUserAgent in config.json
 
       - name: Build website
         run: node build-pages.js
 
       - name: Publish website
         uses: actions/configure-pages@v5
+        with:
+          enablement: true   # switches GitHub Pages on the first time
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs

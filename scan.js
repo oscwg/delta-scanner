@@ -10,7 +10,7 @@ const path = require('path');
 const DS = require('./engine.js');
 const FL = require('./filings.js');
 
-const UA = process.env.SEC_USER_AGENT;
+const UA = process.env.SEC_USER_AGENT || (fs.existsSync(path.join(__dirname, 'config.json')) ? JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8')).secUserAgent : '');
 if (!UA || !/@/.test(UA)) {
   console.error('Set SEC_USER_AGENT to "Name email@domain" — the SEC blocks requests without a contact User-Agent.');
   process.exit(1);
