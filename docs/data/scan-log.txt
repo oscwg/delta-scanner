@@ -15,4 +15,4 @@ Corroborating 80 flags from their filings…
 Corroboration done: 65/80 flags have validated statements.
 Earnings releases awaiting a 10-Q: 40.
 Foreign-issuer results (6-K): 4.
-Wrote 272 flags (1025 KB).
+Wrote 272 flags (1021 KB).
