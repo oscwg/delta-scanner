@@ -1,4 +1,4 @@
-Latest-filings feed: 1373 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
+Latest-filings feed: 1372 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
 Fetching 195 XBRL frames (2023Q4–2026Q3)…
   25/195 frames
   50/195 frames
@@ -8,7 +8,7 @@ Fetching 195 XBRL frames (2023Q4–2026Q3)…
   150/195 frames
   175/195 frames
 Frames done (0 empty or unavailable).
-Derived 25494 fiscal-Q4 values from annual filings.
+Derived 25493 fiscal-Q4 values from annual filings.
 Fetching filing history for 286 flagged companies…
 Scanned 2457 companies; 584 flagged; kept top 286.
 Corroborating 80 flags from their filings…
