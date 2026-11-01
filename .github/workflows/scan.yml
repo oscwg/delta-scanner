@@ -27,6 +27,10 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # scheduled runs otherwise check out the commit from when they were queued, which can be behind the
+          # previous run's history commit and makes the final push fail
+          ref: main
 
       - uses: actions/setup-node@v4
         with:
@@ -71,8 +75,13 @@ jobs:
         run: |
           git config user.name "delta-scanner-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          node -e "const m=require('./docs/data/flags.json').meta;require('fs').writeFileSync('docs/data/last-run.json',JSON.stringify({generatedAt:m.generatedAt,companiesScanned:m.companiesScanned,companiesFlagged:m.companiesFlagged}))"
+          node -e "const m=require('./docs/data/flags.json').meta;require('fs').writeFileSync('docs/data/last-run.json',JSON.stringify({generatedAt:m.generatedAt,companiesScanned:m.companiesScanned,companiesFlagged:m.companiesFlagged}))" || true
           tail -c 20000 docs/data/scan-log.txt > /tmp/l 2>/dev/null && mv /tmp/l docs/data/scan-log.txt || true
           for f in docs/data/scan-log.txt docs/data/history.json docs/data/last-run.json docs/data/quote-cache.json; do [ -f "$f" ] && git add "$f"; done
-          git commit -m "Scan $(date -u +%Y-%m-%dT%H:%MZ)" || echo "No changes to commit"
-          git push
+          git commit -m "Scan $(date -u +%Y-%m-%dT%H:%MZ)" || { echo "No changes to commit"; exit 0; }
+          # if main moved while this run was scanning, replay this run's small commit on top (ours wins on conflict)
+          for i in 1 2 3; do
+            git pull --rebase -X theirs origin main && git push && exit 0
+            sleep 5
+          done
+          echo "Could not save history this time; the website data is unaffected."
