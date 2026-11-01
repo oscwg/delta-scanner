@@ -21,7 +21,7 @@ concurrency:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 75
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
@@ -36,10 +36,9 @@ jobs:
         run: node test/engine.test.js && node test/filings.test.js
 
       - name: Scan SEC EDGAR
-        run: |
-          set -o pipefail
-          node scan.js 2>&1 | tee docs/data/scan-log.txt
+        run: bash tools/loop.sh once
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}   # optional; falls back to secUserAgent in config.json
 
       - name: Build website
@@ -57,6 +56,16 @@ jobs:
 
       # Only the small first-seen history is committed, so the repo doesn't grow with every scan.
       # The commit also counts as activity, which stops GitHub pausing the schedule.
+      # GitHub starts scheduled runs only every ~45-60 minutes on free accounts, so each run keeps scanning at every
+      # 10-minute mark for ~50 minutes; the next scheduled run queues behind it and takes over.
+      - name: Keep scanning every 10 minutes
+        if: success()
+        run: bash tools/loop.sh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          LOOP_MINUTES: 52
+
       - name: Save history
         if: always()   # the scan log is saved even when a scan fails, so problems can be diagnosed from the repo
         run: |

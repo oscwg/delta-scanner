@@ -36,7 +36,7 @@ You need a free GitHub account. The repository must be **public**: free accounts
 
 Your link is `https://<your-username>.github.io/<repo-name>/`. Share that. Links to a single company work too: open it, click the company, copy the address (it ends in something like `#t-GILD`).
 
-From then on it scans every 10 minutes and republishes the page. Anyone with the page open sees a "New scan loaded" notice when fresh results arrive; there's nothing to refresh.
+From then on it scans every 10 minutes. GitHub only starts scheduled runs about once an hour on free accounts, so each run keeps scanning at every 10-minute mark for ~50 minutes and pushes each result to the repo's `data` branch, which the page reads directly; the next scheduled run queues behind it and takes over. Anyone with the page open sees a "New scan loaded" notice when fresh results arrive; there's nothing to refresh.
 
 ## Why this design holds up
 

@@ -322,11 +322,19 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 0 28px; }
   const metricLabel = (ck) => (DATA.meta.concepts[ck] || { label: ck }).label;
 
   // ---------- load
+  // Newest scan wins. On GitHub Pages the scanner also pushes every scan to the repo's `data` branch, which is fresher
+  // than the deployed copy (the site itself is only redeployed about once an hour).
+  async function fetchData() {
+    const urls = ['data/flags.json'];
+    const m = location.hostname.match(/^([^.]+)\.github\.io$/);
+    if (m) { const repo = location.pathname.split('/').filter(Boolean)[0] || `${m[1]}.github.io`; urls.unshift(`https://raw.githubusercontent.com/${m[1]}/${repo}/data/flags.json?t=${Math.floor(Date.now() / 60000)}`); }
+    const got = (await Promise.all(urls.map((u) => fetch(u, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).catch(() => null)))).filter((d) => d && d.meta);
+    if (!got.length) throw new Error('no data file reachable');
+    return got.sort((a, b) => String(b.meta.generatedAt).localeCompare(String(a.meta.generatedAt)))[0];
+  }
   async function load() {
     try {
-      const r = await fetch('data/flags.json', { cache: 'no-store' });
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      DATA = await r.json();
+      DATA = await fetchData();
     } catch (e) {
       $('runline').textContent = 'No scan data yet';
       $('detail').innerHTML = `<div class="empty">Could not load <code>data/flags.json</code> (${esc(e.message)}). Run the scanner once, or check the GitHub Actions log for the last run.</div>`;
@@ -360,9 +368,7 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 0 28px; }
     if (refreshing || document.hidden) return;
     refreshing = true;
     try {
-      const r = await fetch('data/flags.json', { cache: 'no-store' });
-      if (!r.ok) return;
-      const next = await r.json();
+      const next = await fetchData();
       if (!next.meta || next.meta.generatedAt === DATA.meta.generatedAt) return;
       const keepCik = current && current.cik; const keepMetric = metricSel;
       const before = new Set(FLAGS.map((f) => f.cik + '|' + f.period));
@@ -392,7 +398,7 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 0 28px; }
       const sn = m.snapshot;
       const parts = [sn.fresh ? `the ${sn.fresh} flags from filings accepted in the last 48 hours` : '', `the ${sn.top} highest-scoring flags from the run`, sn.sampled ? `${sn.sampled} sampled from further down the ranking` : ''].filter(Boolean);
       const list = parts.length > 1 ? parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1] : parts[0];
-      $('banner').innerHTML = `<b>Live snapshot from SEC EDGAR.</b> This view holds ${list}. The scheduled pipeline publishes the full top ${sn.rankedOf} and rescans every 10 minutes.${sn.note ? ' ' + esc(sn.note) : ''}`;
+      $('banner').innerHTML = `<b>Live snapshot from SEC EDGAR.</b> This view holds ${list}. The scheduled pipeline publishes the full top ${sn.rankedOf} and rescans SEC about every 10 minutes.${sn.note ? ' ' + esc(sn.note) : ''}`;
     }
     if (m.demo) {
       $('banner').hidden = false;
