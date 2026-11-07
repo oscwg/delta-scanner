@@ -61,114 +61,6 @@ Corroboration done: 71/80 flags have validated statements.
 Earnings releases awaiting a 10-Q: 29.
 Foreign-issuer results (6-K): 2.
 Wrote 334 flags (1212 KB).
-Latest-filings feed: 2345 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
-Fetching 195 XBRL frames (2023Q4–2026Q3)…
-  25/195 frames
-  50/195 frames
-  75/195 frames
-  100/195 frames
-  125/195 frames
-  150/195 frames
-  175/195 frames
-Frames done (0 empty or unavailable).
-Derived 25565 fiscal-Q4 values from annual filings.
-Fetching filing history for 334 flagged companies…
-Scanned 2465 companies; 602 flagged; kept top 334.
-Corroborating 80 flags from their filings…
-Corroboration done: 71/80 flags have validated statements.
-Earnings releases awaiting a 10-Q: 29.
-Foreign-issuer results (6-K): 2.
-Wrote 334 flags (1212 KB).
-Latest-filings feed: 2345 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
-Fetching 195 XBRL frames (2023Q4–2026Q3)…
-  25/195 frames
-  50/195 frames
-  75/195 frames
-  100/195 frames
-  125/195 frames
-  150/195 frames
-  175/195 frames
-Frames done (0 empty or unavailable).
-Derived 25565 fiscal-Q4 values from annual filings.
-Fetching filing history for 334 flagged companies…
-Scanned 2465 companies; 602 flagged; kept top 334.
-Corroborating 80 flags from their filings…
-Corroboration done: 71/80 flags have validated statements.
-Earnings releases awaiting a 10-Q: 29.
-Foreign-issuer results (6-K): 2.
-Wrote 334 flags (1212 KB).
-Latest-filings feed: 2345 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
-Fetching 195 XBRL frames (2023Q4–2026Q3)…
-  25/195 frames
-  50/195 frames
-  75/195 frames
-  100/195 frames
-  125/195 frames
-  150/195 frames
-  175/195 frames
-Frames done (0 empty or unavailable).
-Derived 25565 fiscal-Q4 values from annual filings.
-Fetching filing history for 334 flagged companies…
-Scanned 2465 companies; 602 flagged; kept top 334.
-Corroborating 80 flags from their filings…
-Corroboration done: 71/80 flags have validated statements.
-Earnings releases awaiting a 10-Q: 29.
-Foreign-issuer results (6-K): 2.
-Wrote 334 flags (1212 KB).
-Latest-filings feed: 2345 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
-Fetching 195 XBRL frames (2023Q4–2026Q3)…
-  25/195 frames
-  50/195 frames
-  75/195 frames
-  100/195 frames
-  125/195 frames
-  150/195 frames
-  175/195 frames
-Frames done (0 empty or unavailable).
-Derived 25565 fiscal-Q4 values from annual filings.
-Fetching filing history for 334 flagged companies…
-Scanned 2465 companies; 602 flagged; kept top 334.
-Corroborating 80 flags from their filings…
-Corroboration done: 71/80 flags have validated statements.
-Earnings releases awaiting a 10-Q: 29.
-Foreign-issuer results (6-K): 2.
-Wrote 334 flags (1212 KB).
-Latest-filings feed: 2345 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
-Fetching 195 XBRL frames (2023Q4–2026Q3)…
-  25/195 frames
-  50/195 frames
-  75/195 frames
-  100/195 frames
-  125/195 frames
-  150/195 frames
-  175/195 frames
-Frames done (0 empty or unavailable).
-Derived 25565 fiscal-Q4 values from annual filings.
-Fetching filing history for 334 flagged companies…
-Scanned 2465 companies; 602 flagged; kept top 334.
-Corroborating 80 flags from their filings…
-Corroboration done: 71/80 flags have validated statements.
-Earnings releases awaiting a 10-Q: 29.
-Foreign-issuer results (6-K): 2.
-Wrote 334 flags (1212 KB).
-Latest-filings feed: 2345 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
-Fetching 195 XBRL frames (2023Q4–2026Q3)…
-  25/195 frames
-  50/195 frames
-  75/195 frames
-  100/195 frames
-  125/195 frames
-  150/195 frames
-  175/195 frames
-Frames done (0 empty or unavailable).
-Derived 25565 fiscal-Q4 values from annual filings.
-Fetching filing history for 334 flagged companies…
-Scanned 2465 companies; 602 flagged; kept top 334.
-Corroborating 80 flags from their filings…
-Corroboration done: 71/80 flags have validated statements.
-Earnings releases awaiting a 10-Q: 29.
-Foreign-issuer results (6-K): 2.
-Wrote 334 flags (1212 KB).
 Latest-filings feed: 2289 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
 Fetching 195 XBRL frames (2023Q4–2026Q3)…
   25/195 frames
@@ -565,3 +457,111 @@ Corroboration done: 69/80 flags have validated statements.
 Earnings releases awaiting a 10-Q: 17.
 Foreign-issuer results (6-K): 0.
 Wrote 314 flags (1132 KB).
+Latest-filings feed: 1855 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
+Fetching 195 XBRL frames (2023Q4–2026Q3)…
+  25/195 frames
+  50/195 frames
+  75/195 frames
+  100/195 frames
+  125/195 frames
+  150/195 frames
+  175/195 frames
+Frames done (0 empty or unavailable).
+Derived 25565 fiscal-Q4 values from annual filings.
+Fetching filing history for 315 flagged companies…
+Scanned 2465 companies; 602 flagged; kept top 315.
+Corroborating 80 flags from their filings…
+Corroboration done: 69/80 flags have validated statements.
+Earnings releases awaiting a 10-Q: 16.
+Foreign-issuer results (6-K): 0.
+Wrote 315 flags (1135 KB).
+Latest-filings feed: 1845 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
+Fetching 195 XBRL frames (2023Q4–2026Q3)…
+  25/195 frames
+  50/195 frames
+  75/195 frames
+  100/195 frames
+  125/195 frames
+  150/195 frames
+  175/195 frames
+Frames done (0 empty or unavailable).
+Derived 25565 fiscal-Q4 values from annual filings.
+Fetching filing history for 315 flagged companies…
+Scanned 2465 companies; 602 flagged; kept top 315.
+Corroborating 80 flags from their filings…
+Corroboration done: 69/80 flags have validated statements.
+Earnings releases awaiting a 10-Q: 16.
+Foreign-issuer results (6-K): 0.
+Wrote 315 flags (1135 KB).
+Latest-filings feed: 1837 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
+Fetching 195 XBRL frames (2023Q4–2026Q3)…
+  25/195 frames
+  50/195 frames
+  75/195 frames
+  100/195 frames
+  125/195 frames
+  150/195 frames
+  175/195 frames
+Frames done (0 empty or unavailable).
+Derived 25565 fiscal-Q4 values from annual filings.
+Fetching filing history for 315 flagged companies…
+Scanned 2465 companies; 602 flagged; kept top 315.
+Corroborating 80 flags from their filings…
+Corroboration done: 69/80 flags have validated statements.
+Earnings releases awaiting a 10-Q: 16.
+Foreign-issuer results (6-K): 0.
+Wrote 315 flags (1135 KB).
+Latest-filings feed: 1833 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
+Fetching 195 XBRL frames (2023Q4–2026Q3)…
+  25/195 frames
+  50/195 frames
+  75/195 frames
+  100/195 frames
+  125/195 frames
+  150/195 frames
+  175/195 frames
+Frames done (0 empty or unavailable).
+Derived 25564 fiscal-Q4 values from annual filings.
+Fetching filing history for 315 flagged companies…
+Scanned 2465 companies; 602 flagged; kept top 315.
+Corroborating 80 flags from their filings…
+Corroboration done: 69/80 flags have validated statements.
+Earnings releases awaiting a 10-Q: 16.
+Foreign-issuer results (6-K): 0.
+Wrote 315 flags (1135 KB).
+Latest-filings feed: 1831 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
+Fetching 195 XBRL frames (2023Q4–2026Q3)…
+  25/195 frames
+  50/195 frames
+  75/195 frames
+  100/195 frames
+  125/195 frames
+  150/195 frames
+  175/195 frames
+Frames done (0 empty or unavailable).
+Derived 25565 fiscal-Q4 values from annual filings.
+Fetching filing history for 315 flagged companies…
+Scanned 2465 companies; 602 flagged; kept top 315.
+Corroborating 80 flags from their filings…
+Corroboration done: 69/80 flags have validated statements.
+Earnings releases awaiting a 10-Q: 16.
+Foreign-issuer results (6-K): 0.
+Wrote 315 flags (1135 KB).
+Latest-filings feed: 1827 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
+Fetching 195 XBRL frames (2023Q4–2026Q3)…
+  25/195 frames
+  50/195 frames
+  75/195 frames
+  100/195 frames
+  125/195 frames
+  150/195 frames
+  175/195 frames
+Frames done (0 empty or unavailable).
+Derived 25565 fiscal-Q4 values from annual filings.
+Fetching filing history for 315 flagged companies…
+Scanned 2465 companies; 602 flagged; kept top 315.
+Corroborating 80 flags from their filings…
+Corroboration done: 68/80 flags have validated statements.
+Earnings releases awaiting a 10-Q: 15.
+Foreign-issuer results (6-K): 0.
+Wrote 315 flags (1132 KB).
