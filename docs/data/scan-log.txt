@@ -1,96 +1,4 @@
-mes
-  75/195 frames
-  100/195 frames
-  125/195 frames
-  150/195 frames
-  175/195 frames
-Frames done (0 empty or unavailable).
-Derived 25660 fiscal-Q4 values from annual filings.
-Fetching filing history for 250 flagged companies…
-Scanned 2471 companies; 603 flagged; kept top 250.
-Corroborating 80 flags from their filings…
-Corroboration done: 74/80 flags have validated statements.
-Earnings releases awaiting a 10-Q: 2.
-Foreign-issuer results (6-K): 0.
-Wrote 250 flags (953 KB).
-  ! feed 10-Q @0: The operation was aborted due to timeout
-  ! feed 10-K @0: The operation was aborted due to timeout
-  ! feed 8-K @100: The operation was aborted due to timeout
-  ! feed 6-K @0: The operation was aborted due to timeout
-Latest-filings feed: 99 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
-Fetching 195 XBRL frames (2023Q4–2026Q3)…
-  25/195 frames
-Scan took over 9 minutes; stopping and keeping previous data.
-  ! feed 10-Q @0: The operation was aborted due to timeout
-  ! feed 10-K @0: The operation was aborted due to timeout
-  ! feed 8-K @100: The operation was aborted due to timeout
-Latest-filings feed: 200 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
-Fetching 195 XBRL frames (2023Q4–2026Q3)…
-Scan took over 9 minutes; stopping and keeping previous data.
-  ! feed 10-K @0: The operation was aborted due to timeout
-  ! feed 6-K @0: The operation was aborted due to timeout
-Latest-filings feed: 269 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
-Ticker map unavailable (Cannot read properties of null (reading 'data')); universe will not be filtered by exchange.
-Fetching 195 XBRL frames (2023Q4–2026Q3)…
-  25/195 frames
-  50/195 frames
-  75/195 frames
-  100/195 frames
-  125/195 frames
-  150/195 frames
-  175/195 frames
-Frames done (0 empty or unavailable).
-Derived 25664 fiscal-Q4 values from annual filings.
-Fetching filing history for 250 flagged companies…
-Scanned 2773 companies; 665 flagged; kept top 250.
-Corroborating 80 flags from their filings…
-Corroboration done: 74/80 flags have validated statements.
-Earnings releases awaiting a 10-Q: 3.
-Foreign-issuer results (6-K): 0.
-Wrote 250 flags (953 KB).
-  ! feed 10-Q @0: The operation was aborted due to timeout
-  ! feed 10-K @0: The operation was aborted due to timeout
-Latest-filings feed: 264 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
-Fetching 195 XBRL frames (2023Q4–2026Q3)…
-  25/195 frames
-  50/195 frames
-  75/195 frames
-  100/195 frames
-  125/195 frames
-  150/195 frames
-  175/195 frames
-Frames done (0 empty or unavailable).
-Derived 25664 fiscal-Q4 values from annual filings.
-Fetching filing history for 250 flagged companies…
-Scanned 2471 companies; 604 flagged; kept top 250.
-Corroborating 80 flags from their filings…
-Corroboration done: 74/80 flags have validated statements.
-Earnings releases awaiting a 10-Q: 5.
-Foreign-issuer results (6-K): 0.
-Wrote 250 flags (956 KB).
-  ! feed 10-K @0: The operation was aborted due to timeout
-Latest-filings feed: 379 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
-Fetching 195 XBRL frames (2023Q4–2026Q3)…
-  25/195 frames
-  50/195 frames
-  75/195 frames
-  100/195 frames
-  125/195 frames
-  150/195 frames
-  175/195 frames
-Frames done (0 empty or unavailable).
-Derived 25664 fiscal-Q4 values from annual filings.
-Fetching filing history for 251 flagged companies…
-Scanned 2471 companies; 604 flagged; kept top 251.
-Corroborating 80 flags from their filings…
-Corroboration done: 74/80 flags have validated statements.
-Earnings releases awaiting a 10-Q: 3.
-Foreign-issuer results (6-K): 0.
-Wrote 251 flags (954 KB).
-  ! feed 10-Q @100: The operation was aborted due to timeout
-  ! feed 10-K @0: The operation was aborted due to timeout
-SEC unreachable (The operation was aborted due to timeout). Keeping previous data.
-  ! feed 10-Q @0: The operation was aborted due to timeout
+ed 10-Q @0: The operation was aborted due to timeout
   ! feed 10-K @0: The operation was aborted due to timeout
 SEC unreachable (The operation was aborted due to timeout). Keeping previous data.
   ! feed 10-Q @0: The operation was aborted due to timeout
@@ -486,3 +394,111 @@ Corroboration done: 74/80 flags have validated statements.
 Earnings releases awaiting a 10-Q: 0.
 Foreign-issuer results (6-K): 0.
 Wrote 255 flags (971 KB).
+Latest-filings feed: 959 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
+Fetching 195 XBRL frames (2023Q4–2026Q3)…
+  25/195 frames
+  50/195 frames
+  75/195 frames
+  100/195 frames
+  125/195 frames
+  150/195 frames
+  175/195 frames
+Frames done (0 empty or unavailable).
+Derived 25699 fiscal-Q4 values from annual filings.
+Fetching filing history for 255 flagged companies…
+Scanned 2472 companies; 607 flagged; kept top 255.
+Corroborating 80 flags from their filings…
+Corroboration done: 74/80 flags have validated statements.
+Earnings releases awaiting a 10-Q: 4.
+Foreign-issuer results (6-K): 0.
+Wrote 255 flags (975 KB).
+Latest-filings feed: 959 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
+Fetching 195 XBRL frames (2023Q4–2026Q3)…
+  25/195 frames
+  50/195 frames
+  75/195 frames
+  100/195 frames
+  125/195 frames
+  150/195 frames
+  175/195 frames
+Frames done (0 empty or unavailable).
+Derived 25699 fiscal-Q4 values from annual filings.
+Fetching filing history for 255 flagged companies…
+Scanned 2472 companies; 607 flagged; kept top 255.
+Corroborating 80 flags from their filings…
+Corroboration done: 74/80 flags have validated statements.
+Earnings releases awaiting a 10-Q: 4.
+Foreign-issuer results (6-K): 0.
+Wrote 255 flags (975 KB).
+Latest-filings feed: 1024 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
+Fetching 195 XBRL frames (2023Q4–2026Q3)…
+  25/195 frames
+  50/195 frames
+  75/195 frames
+  100/195 frames
+  125/195 frames
+  150/195 frames
+  175/195 frames
+Frames done (0 empty or unavailable).
+Derived 25699 fiscal-Q4 values from annual filings.
+Fetching filing history for 255 flagged companies…
+Scanned 2472 companies; 607 flagged; kept top 255.
+Corroborating 80 flags from their filings…
+Corroboration done: 74/80 flags have validated statements.
+Earnings releases awaiting a 10-Q: 6.
+Foreign-issuer results (6-K): 0.
+Wrote 255 flags (977 KB).
+Latest-filings feed: 1029 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
+Fetching 195 XBRL frames (2023Q4–2026Q3)…
+  25/195 frames
+  50/195 frames
+  75/195 frames
+  100/195 frames
+  125/195 frames
+  150/195 frames
+  175/195 frames
+Frames done (0 empty or unavailable).
+Derived 25698 fiscal-Q4 values from annual filings.
+Fetching filing history for 255 flagged companies…
+Scanned 2472 companies; 607 flagged; kept top 255.
+Corroborating 80 flags from their filings…
+Corroboration done: 74/80 flags have validated statements.
+Earnings releases awaiting a 10-Q: 5.
+Foreign-issuer results (6-K): 0.
+Wrote 255 flags (975 KB).
+Latest-filings feed: 1024 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
+Fetching 195 XBRL frames (2023Q4–2026Q3)…
+  25/195 frames
+  50/195 frames
+  75/195 frames
+  100/195 frames
+  125/195 frames
+  150/195 frames
+  175/195 frames
+Frames done (0 empty or unavailable).
+Derived 25699 fiscal-Q4 values from annual filings.
+Fetching filing history for 255 flagged companies…
+Scanned 2472 companies; 607 flagged; kept top 255.
+Corroborating 80 flags from their filings…
+Corroboration done: 74/80 flags have validated statements.
+Earnings releases awaiting a 10-Q: 6.
+Foreign-issuer results (6-K): 0.
+Wrote 255 flags (977 KB).
+Latest-filings feed: 1029 filings in the last 48h (10-Q, 10-K, 8-K, 6-K).
+Fetching 195 XBRL frames (2023Q4–2026Q3)…
+  25/195 frames
+  50/195 frames
+  75/195 frames
+  100/195 frames
+  125/195 frames
+  150/195 frames
+  175/195 frames
+Frames done (0 empty or unavailable).
+Derived 25698 fiscal-Q4 values from annual filings.
+Fetching filing history for 255 flagged companies…
+Scanned 2472 companies; 607 flagged; kept top 255.
+Corroborating 80 flags from their filings…
+Corroboration done: 74/80 flags have validated statements.
+Earnings releases awaiting a 10-Q: 5.
+Foreign-issuer results (6-K): 0.
+Wrote 255 flags (975 KB).
